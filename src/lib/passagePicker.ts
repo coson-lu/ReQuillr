@@ -1,0 +1,274 @@
+// lib/passagePicker.ts
+// (Segmenter + abbreviation/initial merge + paragraph-preserving joins + start-at-paragraph-begin)
+
+export interface PickPassageOptions {
+	targetWords?: number;
+	minWords?: number;
+	maxWords?: number;
+	locale?: string;
+	mergeParagraphBelow?: number;
+	attempts?: number;
+}
+
+export interface PickResult {
+	passage: string;
+	startSentenceIndex: number;
+	endSentenceIndex: number; // exclusive
+	wordCount: number;
+}
+
+export function pickPassage(
+	text: string,
+	opts: PickPassageOptions = {}
+): PickResult | null {
+	const {
+		targetWords = 250,
+		minWords = 150,
+		maxWords = 350,
+		locale = "en-US",
+		mergeParagraphBelow = 15,
+		attempts = 6,
+	} = opts;
+
+	if (!text || !text.trim()) return null;
+
+	// Hidden boundary we keep even when merging short paragraphs
+	const PARA_BREAK = "\u2028"; // Unicode line separator (rare in natural text)
+
+	// 1) paragraphs (collapse internal newlines inside each raw paragraph)
+	const rawParagraphs = text
+		.split(/\n/) // original paragraphs are separated by a single \n
+		.map((p) => p.replace(/\r?\n+/g, " ").trim())
+		.filter(Boolean);
+
+	if (rawParagraphs.length === 0) return null;
+
+	// 2) merge tiny paragraphs, but preserve a hard boundary using PARA_BREAK
+	const paragraphs: string[] = [];
+	for (let i = 0; i < rawParagraphs.length; i++) {
+		const p = rawParagraphs[i];
+		const wc = p.split(/\s+/).filter(Boolean).length;
+		if (wc < mergeParagraphBelow && i < rawParagraphs.length - 1) {
+			rawParagraphs[i + 1] = `${p}${PARA_BREAK}${rawParagraphs[i + 1]}`;
+		} else {
+			paragraphs.push(p);
+		}
+	}
+
+	// 3) segment sentences
+	const sentenceObjs: { text: string; paragraphIndex: number }[] = [];
+	const segAvailable =
+		typeof Intl !== "undefined" && typeof (Intl as any).Segmenter === "function";
+
+	let virtualParaIndex = 0; // increments for every real or merged sub-paragraph we emit
+
+	if (segAvailable) {
+		const Seg = (Intl as any).Segmenter;
+		const seg = new Seg(locale, { granularity: "sentence" });
+
+		for (let pIndex = 0; pIndex < paragraphs.length; pIndex++) {
+			const p = paragraphs[pIndex];
+			const subs = String(p).split(PARA_BREAK);
+			for (const sub of subs) {
+				const trimmedSub = sub.trim();
+				if (!trimmedSub) {
+					virtualParaIndex++;
+					continue;
+				}
+				for (const segItem of seg.segment(trimmedSub) as Iterable<any>) {
+					const piece =
+						typeof segItem === "string"
+							? segItem
+							: segItem.segment ?? segItem?.input ?? "";
+					const trimmed = String(piece).trim();
+					if (!trimmed) continue;
+					sentenceObjs.push({ text: trimmed, paragraphIndex: virtualParaIndex });
+				}
+				virtualParaIndex++;
+			}
+		}
+	} else {
+		// Conservative fallback
+		const fallbackRegex = /[^.!?]+[.!?]+(?:(?:["')\]]+)|(?:\s+))|[^.!?]+$/g;
+		for (let pIndex = 0; pIndex < paragraphs.length; pIndex++) {
+			const p = paragraphs[pIndex];
+			const subs = String(p).split(PARA_BREAK);
+			for (const sub of subs) {
+				const trimmedSub = sub.trim();
+				if (!trimmedSub) {
+					virtualParaIndex++;
+					continue;
+				}
+				const parts = trimmedSub.match(fallbackRegex) || [];
+				for (let i = 0; i < parts.length; i++) {
+					let piece = (parts[i] || "").trim();
+					if (!piece) continue;
+					// merge forward if lacks terminal punctuation
+					if (!/[.!?]["')\]]*$/.test(piece) && i < parts.length - 1) {
+						let j = i + 1;
+						while (j < parts.length && !/[.!?]["')\]]*$/.test(parts[j])) {
+							parts[i] = `${parts[i]} ${parts[j]}`.trim();
+							parts[j] = "";
+							j++;
+						}
+						if (j < parts.length) {
+							parts[i] = `${parts[i]} ${parts[j]}`.trim();
+							parts[j] = "";
+						}
+						piece = parts[i].trim();
+					}
+					if (piece) sentenceObjs.push({ text: piece, paragraphIndex: virtualParaIndex });
+				}
+				virtualParaIndex++;
+			}
+		}
+	}
+
+	if (sentenceObjs.length === 0) return null;
+
+	// --- Merge fragments that look like abbreviations/initials at the end (but never across paragraphs) ---
+	const abbrevPattern = new RegExp(
+		`(?:\\b(?:Mr|Mrs|Ms|Dr|Prof|Sr|Jr|St|Rev|Lt|Col|Gen|Capt|Sgt|Hon|Pres|Gov|Sen|Rep|Mme|Mlle|Fr|Br|Rabbi|Mgr)\\.)$`,
+		"i"
+	);
+	const initialsPattern = /(?:\b(?:[A-Z]\.){1,3})$/;
+
+	for (let i = 0; i < sentenceObjs.length - 1; i++) {
+		const cur = sentenceObjs[i].text;
+		const endsWithTerminal = /[.!?]["')\]]*$/.test(cur);
+		const endsWithAbbrev = abbrevPattern.test(cur);
+		const endsWithInitials = initialsPattern.test(cur);
+
+		if (
+			(!endsWithTerminal || endsWithAbbrev || endsWithInitials) &&
+			sentenceObjs[i].paragraphIndex === sentenceObjs[i + 1].paragraphIndex
+		) {
+			sentenceObjs[i].text = `${cur} ${sentenceObjs[i + 1].text}`.trim();
+			sentenceObjs.splice(i + 1, 1);
+			i--; // re-evaluate this index for cascading merges
+		}
+	}
+
+	// helper: join sentences with "\n" between paragraphs, " " within
+	const joinRange = (
+		arr: { text: string; paragraphIndex: number }[],
+		start: number,
+		end: number
+	) => {
+		let out = "";
+		for (let i = start; i < end; i++) {
+			const cur = arr[i];
+			if (i === start) {
+				out = cur.text;
+			} else {
+				const prev = arr[i - 1];
+				const sep = cur.paragraphIndex !== prev.paragraphIndex ? "\n" : " ";
+				out += sep + cur.text;
+			}
+		}
+		return out;
+	};
+
+	// Precompute paragraph-start sentence indices
+	const paraStartIdx: number[] = [];
+	for (let i = 0; i < sentenceObjs.length; i++) {
+		if (i === 0 || sentenceObjs[i].paragraphIndex !== sentenceObjs[i - 1].paragraphIndex) {
+			paraStartIdx.push(i);
+		}
+	}
+	if (paraStartIdx.length === 0) return null;
+
+	// helpers for selecting starts that are *only* at paragraph boundaries
+	const prevParaStart = (i: number) => {
+		// return the greatest paraStartIdx < i, or -1 if none
+		for (let k = paraStartIdx.length - 1; k >= 0; k--) {
+			if (paraStartIdx[k] < i) return paraStartIdx[k];
+		}
+		return -1;
+	};
+
+	const wcOf = (s: string) => s.split(/\s+/).filter(Boolean).length;
+
+	// Attempt to build a passage starting from a given paragraph start
+	const tryFromStart = (startIdx: number) => {
+		let words = 0;
+		let end = startIdx;
+
+		// grow toward target
+		while (end < sentenceObjs.length && words < targetWords) {
+			const sWords = wcOf(sentenceObjs[end].text);
+			if (words + sWords > maxWords) break;
+			words += sWords;
+			end++;
+		}
+
+		// ensure min
+		while (end < sentenceObjs.length && words < minWords) {
+			const sWords = wcOf(sentenceObjs[end].text);
+			if (words + sWords > maxWords) break;
+			words += sWords;
+			end++;
+		}
+
+		if (words >= minWords) {
+			const passage = joinRange(sentenceObjs, startIdx, end);
+			return {
+				ok: true as const,
+				passage,
+				start: startIdx,
+				end,
+				words: wcOf(passage),
+			};
+		}
+		return { ok: false as const };
+	};
+
+	// --- Choose random paragraph starts only, try expanding; if short, step back to the previous paragraph start and retry.
+	for (let attempt = 0; attempt < attempts; attempt++) {
+		const start =
+			paraStartIdx[Math.floor(Math.random() * paraStartIdx.length)];
+
+		// First, try from the chosen paragraph start
+		const firstTry = tryFromStart(start);
+		if (firstTry.ok) {
+			return {
+				passage: firstTry.passage,
+				startSentenceIndex: firstTry.start,
+				endSentenceIndex: firstTry.end,
+				wordCount: firstTry.words,
+			};
+		}
+
+		// If too short (due to maxWords constraints), walk back to earlier paragraph starts and retry
+		let curStart = prevParaStart(start);
+		while (curStart !== -1) {
+			const retry = tryFromStart(curStart);
+			if (retry.ok) {
+				return {
+					passage: retry.passage,
+					startSentenceIndex: retry.start,
+					endSentenceIndex: retry.end,
+					wordCount: retry.words,
+				};
+			}
+			curStart = prevParaStart(curStart);
+		}
+		// Otherwise, loop to next random attempt
+	}
+
+	// Final fallback: start at the very first paragraph and grow forward
+	let words = 0;
+	let end = 0;
+	while (end < sentenceObjs.length && words < minWords) {
+		words += wcOf(sentenceObjs[end].text);
+		end++;
+	}
+	const passage = joinRange(sentenceObjs, 0, end);
+	return {
+		passage,
+		startSentenceIndex: 0,
+		endSentenceIndex: end,
+		wordCount: wcOf(passage),
+	};
+}
+
