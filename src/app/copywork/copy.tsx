@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import PassageViewPars from "@/components/PassageViewPars";
 import { PickResult } from "@/lib/passagePicker";
 
 interface CopyProps {
