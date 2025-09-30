@@ -6,9 +6,6 @@ import { PickResult } from "@/lib/passagePicker";
 
 interface CopyProps {
   onContinue: () => void;
-  passage: PickResult;
-  title: string;
-  author: string;
 }
 
 type LogEntry = {
@@ -19,7 +16,7 @@ type LogEntry = {
   scenes: string[];
 };
 
-export default function CopyScene({ onContinue, passage, title, author }: CopyProps) {
+export default function CopyScene({ onContinue }: CopyProps) {
   const [copyWorkText, setCopyWorkText] = useState<string>("");
   const [canType, setCanType] = useState<boolean>(false);
 
@@ -41,9 +38,9 @@ export default function CopyScene({ onContinue, passage, title, author }: CopyPr
           const last = parsed.at(-1);
           if (last?.scenes && typeof last.scenes[0] === 'string') {
             setCopyWorkText(last.scenes[0]);
-            setHighlightHtml(buildHighlights(last.scenes[0], passage?.passage ?? ""));
+            setHighlightHtml(buildHighlights(last.scenes[0], last.passage?.passage ?? ""));
 
-            if (last.scenes[0] === passage?.passage) {
+            if (last.scenes[0] === last.passage?.passage) {
               continueButtonRef.current?.classList.remove("hidden");
             }
           }
@@ -52,7 +49,7 @@ export default function CopyScene({ onContinue, passage, title, author }: CopyPr
     } catch (error) {
       console.error('Failed to load from localStorage:', error);
     }
-  }, [passage]);
+  }, []);
 
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -104,24 +101,19 @@ export default function CopyScene({ onContinue, passage, title, author }: CopyPr
   function handleCopyChange(event: React.ChangeEvent<any>) {
     event.preventDefault();
     const newVal = event.target.value;
+    const storedData = localStorage.getItem('log');
+    const log = JSON.parse(storedData) as LogEntry[];
+    const latest = log.at(-1)
     setCopyWorkText(newVal);
-    setHighlightHtml(buildHighlights(newVal, passage?.passage ?? ""));
+    setHighlightHtml(buildHighlights(newVal, latest?.passage?.passage ?? ""));
 
-    try {
-      const storedData = localStorage.getItem('log');
-      if (storedData) {
-        const log = JSON.parse(storedData) as LogEntry[];
-        if (log.length > 0) {
-          const lastIndex = log.length - 1;
-          log[lastIndex].scenes[0] = newVal;
-          localStorage.setItem('log', JSON.stringify(log));
-        }
-      }
-    } catch (error) {
-      console.error('Failed to save to localStorage:', error);
+    if (log.length > 0) {
+      const lastIndex = log.length - 1;
+      log[lastIndex].scenes[0] = newVal;
+      localStorage.setItem('log', JSON.stringify(log));
     }
 
-    if (newVal === passage?.passage) {
+    if (newVal === latest?.passage?.passage) {
       continueButtonRef.current?.classList.remove("hidden");
     }
   }
@@ -137,7 +129,7 @@ export default function CopyScene({ onContinue, passage, title, author }: CopyPr
 
   return (
     <div className="">
-      <div className="animate-fade-in absolute top-[11vh] font-mono left-1/2 -translate-x-1/2">
+      <div className="animate-fade-in absolute top-[11vh] w-dvw text-center font-mono left-1/2 -translate-x-1/2">
         <p>type the passage verbatim to study phrasing...</p>
       </div>
       <div className="w-dvw h-dvh flex justify-center align-middle items-center animate-fade-in">
@@ -145,9 +137,9 @@ export default function CopyScene({ onContinue, passage, title, author }: CopyPr
           <div className="w-[50%] h-[100%] relative">
             <div
               ref={passageRef}
-              className="w-[100%] h-[100%] pl-10 pr-7 py-5 shadow-sm font-header text-[#111] bg-white/90 border border-black/5 overflow-y-scroll [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100/0 [&::-webkit-scrollbar-thumb]:bg-accent transition transition-discrete"
+              className="w-[100%] h-[100%] pl-10 pr-7 py-5 shadow-sm font-header whitespace-pre-line text-[#111] bg-white/90 border border-black/5 overflow-y-scroll [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100/0 [&::-webkit-scrollbar-thumb]:bg-accent transition transition-discrete"
             >
-              <PassageViewPars result={passage} /> {/* FIX THIS */}
+              <p>{JSON.parse(localStorage.getItem('log')).at(-1).passage.passage}</p>
             </div>
             <p
               ref={passageHintRef}
@@ -200,7 +192,7 @@ export default function CopyScene({ onContinue, passage, title, author }: CopyPr
         </div>
       </div>
       <div className="animate-fade-in absolute top-[87vh] text-sm font-header left-1/2 -translate-x-1/2">
-        <p>(Excerpt from <i>{title}</i> by {author})</p>
+        <p>(Excerpt from <i>{JSON.parse(localStorage.getItem('log')).at(-1).title}</i> by {JSON.parse(localStorage.getItem('log')).at(-1).author})</p>
       </div>
       <button
         ref={continueButtonRef}

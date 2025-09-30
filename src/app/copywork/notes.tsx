@@ -6,9 +6,6 @@ import { PickResult } from "@/lib/passagePicker";
 
 interface NotesProps {
   onContinue: () => void;
-  passage: PickResult;
-  title: string;
-  author: string;
 }
 
 type LogEntry = {
@@ -19,7 +16,7 @@ type LogEntry = {
   scenes: string[];
 };
 
-export default function NotesScene({ onContinue, passage, title, author }: NotesProps) {
+export default function NotesScene({ onContinue }: NotesProps) {
   const [notesText, setNotesText] = useState<string>("");
   const passageRef = useRef<HTMLDivElement>(null);
   const notesRef = useRef<HTMLTextAreaElement>(null);
@@ -63,16 +60,16 @@ export default function NotesScene({ onContinue, passage, title, author }: Notes
 
   return (
     <div className="">
-      <div className="animate-fade-in absolute top-[11vh] font-mono left-1/2 -translate-x-1/2">
+      <div className="animate-fade-in absolute top-[11vh] w-dvw text-center font-mono left-1/2 -translate-x-1/2">
         <p>write short notes/hints for each sentence (20–30 chars)...</p>
       </div>
       <div className="w-dvw h-dvh flex justify-center align-middle items-center animate-fade-in">
         <div className="flex flex-row items-center justify-center gap-[7.5vw] w-[85vw] h-[70vh] ">
           <div
             ref={passageRef}
-            className="w-[50%] h-[100%] pl-10 pr-7 py-5 shadow-sm font-header text-[#111] bg-white/90 border border-black/5 overflow-y-scroll [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100/0 [&::-webkit-scrollbar-thumb]:bg-accent transition transition-discrete"
+            className="w-[50%] h-[100%] pl-10 pr-7 py-5 shadow-sm font-header text-[#111] whitespace-pre-line bg-white/90 border border-black/5 overflow-y-scroll [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100/0 [&::-webkit-scrollbar-thumb]:bg-accent transition transition-discrete"
           >
-            <PassageViewPars result={passage} />
+            <p>{JSON.parse(localStorage.getItem('log')).at(-1).passage.passage}</p>
           </div>
           <textarea
             ref={notesRef}
@@ -88,7 +85,7 @@ export default function NotesScene({ onContinue, passage, title, author }: Notes
         </div>
       </div>
       <div className="animate-fade-in absolute top-[87vh] text-sm font-header left-1/2 -translate-x-1/2">
-        <p>(Excerpt from <i>{title}</i> by {author})</p>
+        <p>(Excerpt from <i>{JSON.parse(localStorage.getItem('log')).at(-1).title}</i> by {JSON.parse(localStorage.getItem('log')).at(-1).author})</p>
       </div>
       <button
         onClick={() => {

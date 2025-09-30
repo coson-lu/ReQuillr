@@ -78,18 +78,12 @@ export default function Home() {
           setScene('compare');
           setProgress(10);
         }}
-        passage={passage}
-        author={author}
-        title={title}
       />}
       {scene === 'compare' && <CompareScene
         onContinue={() => {
           setScene('done');
           setProgress(20);
         }}
-        passage={passage}
-        author={author}
-        title={title}
       />}
       {scene === 'done' && <DoneScene />}
     </div>

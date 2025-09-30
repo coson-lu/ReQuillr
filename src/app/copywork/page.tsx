@@ -110,18 +110,12 @@ export default function Home() {
           setScene('notes');
           setProgress(10);
         }}
-        passage={passage}
-        author={author}
-        title={title}
       />}
       {scene === 'notes' && <NotesScene
         onContinue={() => {
           setScene('done');
           setProgress(20);
         }}
-        passage={passage}
-        author={author}
-        title={title}
       />}
       {scene === 'done' && <DoneScene />}
     </div>
