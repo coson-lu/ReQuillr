@@ -61,6 +61,8 @@ body {
   background-image: url("/background.jpg");
   background-size: cover;
   background-position: center center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
   color: var(--foreground);
   font-family: var(--font-inter), Arial, Helvetica, sans-serif;
 }

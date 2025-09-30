@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import PassageViewPars from "@/components/PassageViewPars";
 import { PickResult } from "@/lib/passagePicker";
 
-interface NotesProps {
+interface CompareProps {
   onContinue: () => void;
   passage: PickResult;
   title: string;
@@ -19,10 +19,10 @@ type LogEntry = {
   scenes: string[];
 };
 
-export default function NotesScene({ onContinue, passage, title, author }: NotesProps) {
-  const [notesText, setNotesText] = useState<string>("");
+export default function CompareScene({ onContinue, title, author }: CompareProps) {
+  const [compareText, setCompareText] = useState<string>("");
   const passageRef = useRef<HTMLDivElement>(null);
-  const notesRef = useRef<HTMLTextAreaElement>(null);
+  const compareRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     try {
@@ -31,8 +31,8 @@ export default function NotesScene({ onContinue, passage, title, author }: Notes
         const parsed = JSON.parse(storedData) as LogEntry[];
         if (Array.isArray(parsed) && parsed.length > 0) {
           const last = parsed.at(-1);
-          if (last?.scenes && typeof last.scenes[1] === 'string') {
-            setNotesText(last.scenes[1]);
+          if (last?.scenes && typeof last.scenes[3] === 'string') {
+            setCompareText(last.scenes[3]);
           }
         }
       }
@@ -44,7 +44,7 @@ export default function NotesScene({ onContinue, passage, title, author }: Notes
   function handleNotesChange(event: React.ChangeEvent<any>) {
     event.preventDefault();
     const newVal = event.target.value;
-    setNotesText(newVal);
+    setCompareText(newVal);
 
     try {
       const storedData = localStorage.getItem('log');
@@ -52,7 +52,7 @@ export default function NotesScene({ onContinue, passage, title, author }: Notes
         const log = JSON.parse(storedData) as LogEntry[];
         if (log.length > 0) {
           const lastIndex = log.length - 1;
-          log[lastIndex].scenes[1] = newVal;
+          log[lastIndex].scenes[3] = newVal;
           localStorage.setItem('log', JSON.stringify(log));
         }
       }
@@ -61,29 +61,43 @@ export default function NotesScene({ onContinue, passage, title, author }: Notes
     }
   }
 
+  console.log(JSON.parse(localStorage.getItem('log')).at(-1)["scenes"])
+
   return (
     <div className="">
       <div className="animate-fade-in absolute top-[11vh] font-mono left-1/2 -translate-x-1/2">
-        <p>write short notes/hints for each sentence (20–30 chars)...</p>
+        <p>compare your version with the original and reflect...</p>
       </div>
       <div className="w-dvw h-dvh flex justify-center align-middle items-center animate-fade-in">
-        <div className="flex flex-row items-center justify-center gap-[7.5vw] w-[85vw] h-[70vh] ">
-          <div
-            ref={passageRef}
-            className="w-[50%] h-[100%] pl-10 pr-7 py-5 shadow-sm font-header text-[#111] bg-white/90 border border-black/5 overflow-y-scroll [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100/0 [&::-webkit-scrollbar-thumb]:bg-accent transition transition-discrete"
-          >
-            <PassageViewPars result={passage} />
+        <div className="w-[85vw] h-[70vh] gap-[2vh] flex flex-col justify-center items-center">
+          <div className="flex flex-row items-center justify-center gap-[7.5vw] w-[100%] h-[75%]">
+            <div
+              ref={passageRef}
+              className="w-[50%] h-[100%] pl-10 pr-7 py-5 shadow-sm font-header text-[#111] bg-white/90 border border-black/5 overflow-y-scroll [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100/0 [&::-webkit-scrollbar-thumb]:bg-accent transition transition-discrete"
+            >
+              {
+                JSON.parse(localStorage.getItem('log')).at(-1).passage.passage
+              }
+            </div>
+            <div
+              ref={passageRef}
+              className="w-[50%] h-[100%] pl-10 pr-7 py-5 shadow-sm font-header text-[#111] bg-white/90 border border-black/5 overflow-y-scroll [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100/0 [&::-webkit-scrollbar-thumb]:bg-accent transition transition-discrete"
+            >
+              {
+                JSON.parse(localStorage.getItem('log')).at(-1)["scenes"][2]
+              }
+            </div>
           </div>
           <textarea
-            ref={notesRef}
-            placeholder="Take notes on the passage here..."
+            ref={compareRef}
+            placeholder="Reflect here..."
             autoComplete="off"
             autoCorrect="off"
             autoCapitalize="off"
             spellCheck="false"
             onChange={handleNotesChange}
-            value={notesText}
-            className="resize-none focus:outline-none w-[50%] h-[100%] pl-10 pr-7 py-5 shadow-sm font-header text-[#111] bg-white/90 border border-black/5 overflow-y-scroll [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100/0 [&::-webkit-scrollbar-thumb]:bg-accent"
+            value={compareText}
+            className="resize-none focus:outline-none w-[100%] h-[25%] pl-10 pr-7 py-5 shadow-sm font-header text-[#111] bg-white/90 border border-black/5 overflow-y-scroll [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100/0 [&::-webkit-scrollbar-thumb]:bg-accent"
           />
         </div>
       </div>
@@ -97,7 +111,7 @@ export default function NotesScene({ onContinue, passage, title, author }: Notes
             const log = JSON.parse(storedData) as LogEntry[];
             if (log.length > 0) {
               const lastIndex = log.length - 1;
-              log[lastIndex].curScene += 1;
+              log[lastIndex].curScene = -1;
               localStorage.setItem('log', JSON.stringify(log));
             }
           }
@@ -110,3 +124,5 @@ export default function NotesScene({ onContinue, passage, title, author }: Notes
     </div>
   );
 }
+
+

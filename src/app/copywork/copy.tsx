@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import textsJSON from '../../../public/texts.json'
 import PassageViewPars from "@/components/PassageViewPars";
 import { PickResult } from "@/lib/passagePicker";
 
@@ -148,7 +147,7 @@ export default function CopyScene({ onContinue, passage, title, author }: CopyPr
               ref={passageRef}
               className="w-[100%] h-[100%] pl-10 pr-7 py-5 shadow-sm font-header text-[#111] bg-white/90 border border-black/5 overflow-y-scroll [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100/0 [&::-webkit-scrollbar-thumb]:bg-accent transition transition-discrete"
             >
-              <PassageViewPars result={passage} />
+              <PassageViewPars result={passage} /> {/* FIX THIS */}
             </div>
             <p
               ref={passageHintRef}
