@@ -12,6 +12,14 @@ interface CopyProps {
   author: string;
 }
 
+type LogEntry = {
+  passage: PickResult | null;
+  author: string;
+  title: string;
+  curScene: number;
+  scenes: string[];
+};
+
 export default function CopyScene({ onContinue, passage, title, author }: CopyProps) {
   const [copyWorkText, setCopyWorkText] = useState<string>("");
   const [canType, setCanType] = useState<boolean>(false);
@@ -24,23 +32,46 @@ export default function CopyScene({ onContinue, passage, title, author }: CopyPr
   const copyWorkRef = useRef<HTMLDivElement>(null);
   const copyHintRef = useRef<HTMLDivElement>(null);
   const continueButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    try {
+      const storedData = localStorage.getItem('log');
+      if (storedData) {
+        const parsed = JSON.parse(storedData) as LogEntry[];
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const last = parsed.at(-1);
+          if (last?.scenes && typeof last.scenes[0] === 'string') {
+            setCopyWorkText(last.scenes[0]);
+            setHighlightHtml(buildHighlights(last.scenes[0], passage?.passage ?? ""));
+
+            if (last.scenes[0] === passage?.passage) {
+              continueButtonRef.current?.classList.remove("hidden");
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load from localStorage:', error);
+    }
+  }, [passage]);
+
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     function handleTabDown(event: any) {
       if (event.key == 'Escape') {
         if (!canType) { // copyworking
-          textAreaRef.current.focus();
-          copyWorkRef.current.classList.remove('blur-md');
-          copyHintRef.current.classList.add('hidden');
-          passageRef.current.classList.add('blur-md');
-          passageHintRef.current.classList.remove('hidden');
+          textAreaRef.current?.focus();
+          copyWorkRef.current?.classList.remove('blur-md');
+          copyHintRef.current?.classList.add('hidden');
+          passageRef.current?.classList.add('blur-md');
+          passageHintRef.current?.classList.remove('hidden');
         } else { // reading
-          copyWorkRef.current.blur();
-          copyWorkRef.current.classList.add('blur-md');
-          copyHintRef.current.classList.remove('hidden');
-          passageRef.current.classList.remove('blur-md');
-          passageHintRef.current.classList.add('hidden');
+          copyWorkRef.current?.blur();
+          copyWorkRef.current?.classList.add('blur-md');
+          copyHintRef.current?.classList.remove('hidden');
+          passageRef.current?.classList.remove('blur-md');
+          passageHintRef.current?.classList.add('hidden');
         }
         setCanType(prev => !prev);
       }
@@ -63,7 +94,6 @@ export default function CopyScene({ onContinue, passage, title, author }: CopyPr
       const expected = target?.[i] ?? "";
       const token = ch === "\n" ? "<br/>" : (escapeHtml(ch) || "&nbsp;");
       if (ch !== expected) {
-        console.log(ch, expected)
         out += `<span class="bg-red-300/60">${token}</span>`;
       } else {
         out += `<span>${token}</span>`;
@@ -76,10 +106,23 @@ export default function CopyScene({ onContinue, passage, title, author }: CopyPr
     event.preventDefault();
     const newVal = event.target.value;
     setCopyWorkText(newVal);
-
     setHighlightHtml(buildHighlights(newVal, passage?.passage ?? ""));
 
-    if (newVal == passage?.passage) {
+    try {
+      const storedData = localStorage.getItem('log');
+      if (storedData) {
+        const log = JSON.parse(storedData) as LogEntry[];
+        if (log.length > 0) {
+          const lastIndex = log.length - 1;
+          log[lastIndex].scenes[0] = newVal;
+          localStorage.setItem('log', JSON.stringify(log));
+        }
+      }
+    } catch (error) {
+      console.error('Failed to save to localStorage:', error);
+    }
+
+    if (newVal === passage?.passage) {
       continueButtonRef.current?.classList.remove("hidden");
     }
   }
@@ -120,7 +163,6 @@ export default function CopyScene({ onContinue, passage, title, author }: CopyPr
               className="blur-md w-[100%] h-[100%] relative"
               ref={copyWorkRef}
             >
-              {/* NEW: highlight overlay behind the textarea */}
               <div
                 ref={highlightRef}
                 aria-hidden="true"
@@ -163,7 +205,18 @@ export default function CopyScene({ onContinue, passage, title, author }: CopyPr
       </div>
       <button
         ref={continueButtonRef}
-        onClick={onContinue}
+        onClick={() => {
+          const storedData = localStorage.getItem('log');
+          if (storedData) {
+            const log = JSON.parse(storedData) as LogEntry[];
+            if (log.length > 0) {
+              const lastIndex = log.length - 1;
+              log[lastIndex].curScene += 1;
+              localStorage.setItem('log', JSON.stringify(log));
+            }
+          }
+          onContinue();
+        }}
         className="hidden cursor-pointer absolute right-[10vh] bottom-[5vh] px-5 py-3 rounded-md shadow-sm font-header font-semibold text-[#111] bg-white/90 border border-black/5 transition hover:-translate-y-1 hover:shadow-md"
       >
         continue...
@@ -171,4 +224,3 @@ export default function CopyScene({ onContinue, passage, title, author }: CopyPr
     </div>
   );
 }
-

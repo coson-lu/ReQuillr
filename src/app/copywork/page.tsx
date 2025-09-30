@@ -1,33 +1,97 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { pickPassage, PickResult } from '@/lib/passagePicker';
-import textsJSON from '../../../public/texts.json'
+import textsJSON from '../../../public/texts.json';
 import CopyScene from "./copy";
 import NotesScene from "./notes";
 import DoneScene from "./done";
+import { useRouter } from 'next/navigation';
+
+type LogEntry = {
+  passage: PickResult;
+  author: string;
+  title: string;
+  curScene: number;
+  scenes: string[];
+};
 
 export default function Home() {
-  const [passage, setPassage] = useState<PickResult | null>(null);
-  const [author, setAuthor] = useState<string | null>("");
-  const [title, setTitle] = useState<string | null>("");
-  const [scene, setScene] = useState<string>('copy');
-  const [progress, setProgress] = useState<number>(0.5);
+  const router = useRouter();
 
+  const [passage, setPassage] = useState<PickResult | undefined>(undefined);
+  const [author, setAuthor] = useState<string>("");
+  const [title, setTitle] = useState<string>("");
+  const [scene, setScene] = useState<string>('');
+  const [progress, setProgress] = useState<number>(0);
 
-  function pickRandomBook() {
-    useEffect(() => {
+  const didInitRef = useRef(false);
+  useEffect(() => {
+    if (didInitRef.current) return;
+    didInitRef.current = true;
+
+    const storedData = JSON.parse(localStorage.getItem('log')) as LogEntry[] || [];
+    const last = storedData.at(-1);
+
+    if (!last || last.curScene === -1) {
       const bookCount = textsJSON.length;
       const randomBookIndex = Math.floor(Math.random() * bookCount);
-      const book = textsJSON[randomBookIndex]
-      console.log(book["title"])
-      console.log(book["author"])
-      setAuthor(book["author"])
-      setTitle(book["title"])
-      setPassage(pickPassage(book["text"], {}))
-    }, []);
-  }
-  pickRandomBook();
+      const book = textsJSON[randomBookIndex];
+
+      const chosenPassage = pickPassage(book["text"], {});
+
+      const entry: LogEntry = {
+        passage: chosenPassage,
+        author: book.author,
+        title: book.title,
+        curScene: 0,
+        scenes: ["", "", "", ""],
+      };
+
+      const newLog = [...storedData, entry];
+
+      setPassage(chosenPassage);
+      setAuthor(book.author);
+      setTitle(book.title);
+      localStorage.setItem('log', JSON.stringify(newLog));
+      setScene('copy');
+      setProgress(0.5);
+
+      try {
+        if (typeof window !== "undefined") {
+          localStorage.setItem('log', JSON.stringify(newLog));
+        }
+      } catch (err) {
+        console.error('Failed to save initial log to localStorage:', err);
+      }
+    } else {
+      switch (last.curScene) {
+        case 0:
+          setScene("copy");
+          setProgress(0.5);
+          setAuthor(last.author || "");
+          setTitle(last.title || "");
+          setPassage(last.passage);
+          break;
+        case 1:
+          setScene("notes");
+          setProgress(10);
+          setAuthor(last.author || "");
+          setTitle(last.title || "");
+          setPassage(last.passage);
+          break;
+        case 2:
+        case 3:
+        default:
+          router.replace('/');
+          break;
+      }
+
+      if (last.passage) setPassage(last.passage);
+      if (last.author) setAuthor(last.author);
+      if (last.title) setTitle(last.title);
+    }
+  }, [router]);
 
   return (
     <div className="">
@@ -40,10 +104,25 @@ export default function Home() {
           />
         </div>
       </div>
-      {scene === 'copy' && <CopyScene onContinue={() => { setScene('notes'); setProgress(10) }} passage={passage} author={author} title={title} />}
-      {scene === 'notes' && (
-        <NotesScene onContinue={() => { setScene('done'); setProgress(20) }} passage={passage} author={author} title={title} />
-      )}
+
+      {scene === 'copy' && <CopyScene
+        onContinue={() => {
+          setScene('notes');
+          setProgress(10);
+        }}
+        passage={passage}
+        author={author}
+        title={title}
+      />}
+      {scene === 'notes' && <NotesScene
+        onContinue={() => {
+          setScene('done');
+          setProgress(20);
+        }}
+        passage={passage}
+        author={author}
+        title={title}
+      />}
       {scene === 'done' && <DoneScene />}
     </div>
   );

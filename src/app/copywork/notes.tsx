@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import PassageViewPars from "@/components/PassageViewPars";
 import { PickResult } from "@/lib/passagePicker";
 
@@ -11,15 +11,55 @@ interface NotesProps {
   author: string;
 }
 
+type LogEntry = {
+  passage: PickResult | null;
+  author: string;
+  title: string;
+  curScene: number;
+  scenes: string[];
+};
+
+
 export default function NotesScene({ onContinue, passage, title, author }: NotesProps) {
   const [notesText, setNotesText] = useState<string>("");
   const passageRef = useRef<HTMLDivElement>(null);
   const notesRef = useRef<HTMLTextAreaElement>(null);
 
+  useEffect(() => {
+    try {
+      const storedData = localStorage.getItem('log');
+      if (storedData) {
+        const parsed = JSON.parse(storedData) as LogEntry[];
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const last = parsed.at(-1);
+          if (last?.scenes && typeof last.scenes[1] === 'string') {
+            setNotesText(last.scenes[1]);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load from localStorage:', error);
+    }
+  }, []);
 
   function handleNotesChange(event: React.ChangeEvent<any>) {
     event.preventDefault();
-    setNotesText(event.target.value);
+    const newVal = event.target.value;
+    setNotesText(newVal);
+
+    try {
+      const storedData = localStorage.getItem('log');
+      if (storedData) {
+        const log = JSON.parse(storedData) as LogEntry[];
+        if (log.length > 0) {
+          const lastIndex = log.length - 1;
+          log[lastIndex].scenes[1] = newVal;
+          localStorage.setItem('log', JSON.stringify(log));
+        }
+      }
+    } catch (error) {
+      console.error('Failed to save to localStorage:', error);
+    }
   }
 
   return (
@@ -51,9 +91,23 @@ export default function NotesScene({ onContinue, passage, title, author }: Notes
       <div className="animate-fade-in absolute top-[87vh] text-sm font-header left-1/2 -translate-x-1/2">
         <p>(Excerpt from <i>{title}</i> by {author})</p>
       </div>
-      <button onClick={onContinue} className="cursor-pointer absolute right-[10vh] bottom-[5vh] px-5 py-3 rounded-md shadow-sm font-header font-semibold text-[#111] bg-white/90 border border-black/5 transition hover:-translate-y-1 hover:shadow-md">finish!</button>
+      <button
+        onClick={() => {
+          const storedData = localStorage.getItem('log');
+          if (storedData) {
+            const log = JSON.parse(storedData) as LogEntry[];
+            if (log.length > 0) {
+              const lastIndex = log.length - 1;
+              log[lastIndex].curScene += 1;
+              localStorage.setItem('log', JSON.stringify(log));
+            }
+          }
+          onContinue();
+        }}
+        className="cursor-pointer absolute right-[10vh] bottom-[5vh] px-5 py-3 rounded-md shadow-sm font-header font-semibold text-[#111] bg-white/90 border border-black/5 transition hover:-translate-y-1 hover:shadow-md"
+      >
+        finish!
+      </button>
     </div>
   );
 }
-
-
