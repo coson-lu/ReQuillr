@@ -63,8 +63,8 @@ export default function Home() {
 
   return (
     <div className="">
-      <h1 className="absolute top-[1vh] left-1/2 -translate-x-1/2 font-header">Recreate</h1>
-      <div className="absolute top-[4vh] left-1/2 -translate-x-1/2">
+      <div className="absolute top-[1.5vh] left-1/2 -translate-x-1/2 font-header flex flex-col items-center gap-1.5">
+        <h1 className="">Recreate</h1>
         <div className="relative w-[20vw] h-0.75 outline outline-[#111] rounded-md">
           <div
             className="absolute top-0 bottom-0 left-[-1px] h-0.75 rounded-md bg-[#111] transition-all duration-150"
@@ -72,7 +72,6 @@ export default function Home() {
           />
         </div>
       </div>
-
       {scene === 'rewrite' && <RewriteScene
         onContinue={() => {
           setScene('compare');
