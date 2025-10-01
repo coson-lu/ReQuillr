@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Playfair_Display, Inter } from "next/font/google";
-import { IoSettingsOutline } from "react-icons/io5";
-import { BsJournal } from "react-icons/bs";
 import "./globals.css";
 import Link from "next/link";
+import Nav from "./nav";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,15 +39,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${playfairDisplay.variable} ${inter.variable} antialiased`}
       >
-        <nav className="absolute top-0 left-0 right-0 flex flex-row justify-between w-4/5 m-auto text-center h-[6vh]">
-          <div className="border-red-100 flex items-center">
-            <Link href='/' className="font-header text-3xl text-center">ReQuillr</Link>
-          </div>
-          <div className="flex flex-row gap-9 items-center">
-            <span className="text-2xl hover:cursor-pointer"><IoSettingsOutline /></span>
-            <span className="text-2xl hover:cursor-pointer"><BsJournal /></span>
-          </div>
-        </nav>
+        <Nav></Nav>
 
         {children}
 

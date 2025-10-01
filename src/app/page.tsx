@@ -14,10 +14,9 @@ type LogEntry = {
 export default function Home() {
   const [processStage, setProcessStage] = useState<string>("")
 
-  const storedData = JSON.parse(localStorage.getItem('log')) as LogEntry[] || [];
-  const last = storedData.at(-1);
-
   useEffect(() => {
+    const storedData = JSON.parse(localStorage.getItem('log')) as LogEntry[] || [];
+    const last = storedData.at(-1);
     if (!last || last.curScene < 2) {
       setProcessStage("copywork")
     } else {
