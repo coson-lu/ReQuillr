@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useRef, useState } from "react";
+import React from "react";
 import { IoSettingsOutline } from "react-icons/io5";
 import { BsJournal } from "react-icons/bs";
 import Link from "next/link";

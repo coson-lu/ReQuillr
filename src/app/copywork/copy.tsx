@@ -40,7 +40,7 @@ export default function CopyScene({ onContinue }: CopyProps) {
     } catch (error) {
       console.error("Failed to initialize from store:", error);
     }
-  }, [logs, latest]);
+  }, [logs, buildHighlights, latest]);
 
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { pickPassage, PickResult } from '@/lib/passagePicker';
+import { pickPassage } from '@/lib/passagePicker';
 import textsJSON from '../../../public/texts.json';
 import CopyScene from "./copy";
 import NotesScene from "./notes";
@@ -60,7 +60,7 @@ export default function Home() {
           break;
       }
     }
-  }, [router, logs]);
+  }, [router, addLog, logs]);
 
   return (
     <div className="">

@@ -59,12 +59,12 @@ export function pickPassage(
 	// 3) segment sentences
 	const sentenceObjs: { text: string; paragraphIndex: number }[] = [];
 	const segAvailable =
-		typeof Intl !== "undefined" && typeof (Intl as any).Segmenter === "function";
+		typeof Intl !== "undefined" && typeof (Intl).Segmenter === "function";
 
 	let virtualParaIndex = 0; // increments for every real or merged sub-paragraph we emit
 
 	if (segAvailable) {
-		const Seg = (Intl as any).Segmenter;
+		const Seg = (Intl).Segmenter;
 		const seg = new Seg(locale, { granularity: "sentence" });
 
 		for (let pIndex = 0; pIndex < paragraphs.length; pIndex++) {
@@ -76,7 +76,7 @@ export function pickPassage(
 					virtualParaIndex++;
 					continue;
 				}
-				for (const segItem of seg.segment(trimmedSub) as Iterable<any>) {
+				for (const segItem of seg.segment(trimmedSub) as Iterable<Intl.SegmentData>) {
 					const piece =
 						typeof segItem === "string"
 							? segItem
