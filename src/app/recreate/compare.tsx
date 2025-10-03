@@ -1,42 +1,31 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import PassageViewPars from "@/components/PassageViewPars";
-import { PickResult } from "@/lib/passagePicker";
+import { useLogStore, LogEntry } from "@/stores/useLogStores";
 
 interface CompareProps {
   onContinue: () => void;
 }
-
-type LogEntry = {
-  passage: PickResult | null;
-  author: string;
-  title: string;
-  curScene: number;
-  scenes: string[];
-};
 
 export default function CompareScene({ onContinue }: CompareProps) {
   const [compareText, setCompareText] = useState<string>("");
   const passageRef = useRef<HTMLDivElement>(null);
   const compareRef = useRef<HTMLTextAreaElement>(null);
 
+  const logs = useLogStore((s) => s.logs);
+  const updateLastLogField = useLogStore((s) => s.updateLastLogField);
+
+  const latest = logs.at(-1) as LogEntry | undefined;
+
   useEffect(() => {
     try {
-      const storedData = localStorage.getItem('log');
-      if (storedData) {
-        const parsed = JSON.parse(storedData) as LogEntry[];
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const last = parsed.at(-1);
-          if (last?.scenes && typeof last.scenes[3] === 'string') {
-            setCompareText(last.scenes[3]);
-          }
-        }
+      if (latest?.scenes && typeof latest.scenes[3] === "string") {
+        setCompareText(latest.scenes[3]);
       }
     } catch (error) {
-      console.error('Failed to load from localStorage:', error);
+      console.error("Failed to load from store:", error);
     }
-  }, []);
+  }, [latest]);
 
   function handleNotesChange(event: React.ChangeEvent<any>) {
     event.preventDefault();
@@ -44,21 +33,15 @@ export default function CompareScene({ onContinue }: CompareProps) {
     setCompareText(newVal);
 
     try {
-      const storedData = localStorage.getItem('log');
-      if (storedData) {
-        const log = JSON.parse(storedData) as LogEntry[];
-        if (log.length > 0) {
-          const lastIndex = log.length - 1;
-          log[lastIndex].scenes[3] = newVal;
-          localStorage.setItem('log', JSON.stringify(log));
-        }
+      if (latest) {
+        const nextScenes = [...(latest.scenes ?? [])];
+        nextScenes[3] = newVal;
+        updateLastLogField("scenes", nextScenes as any);
       }
     } catch (error) {
-      console.error('Failed to save to localStorage:', error);
+      console.error("Failed to save to store:", error);
     }
   }
-
-  console.log(JSON.parse(localStorage.getItem('log')).at(-1)["scenes"])
 
   return (
     <div className="">
@@ -72,17 +55,13 @@ export default function CompareScene({ onContinue }: CompareProps) {
               ref={passageRef}
               className="w-[50%] h-[100%] pl-10 pr-7 py-5 shadow-sm font-header text-[#111] whitespace-pre-line bg-white/90 border border-black/5 overflow-y-scroll [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100/0 [&::-webkit-scrollbar-thumb]:bg-accent transition transition-discrete"
             >
-              {
-                JSON.parse(localStorage.getItem('log')).at(-1).passage.passage
-              }
+              {latest?.passage?.passage}
             </div>
             <div
               ref={passageRef}
               className="w-[50%] h-[100%] pl-10 pr-7 py-5 shadow-sm font-header text-[#111] whitespace-pre-line bg-white/90 border border-black/5 overflow-y-scroll [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100/0 [&::-webkit-scrollbar-thumb]:bg-accent transition transition-discrete"
             >
-              {
-                JSON.parse(localStorage.getItem('log')).at(-1)["scenes"][2]
-              }
+              {latest?.scenes?.[2]}
             </div>
           </div>
           <textarea
@@ -99,18 +78,14 @@ export default function CompareScene({ onContinue }: CompareProps) {
         </div>
       </div>
       <div className="animate-fade-in absolute top-[87vh] text-sm font-header left-1/2 -translate-x-1/2">
-        <p>(Excerpt from <i>{JSON.parse(localStorage.getItem('log')).at(-1).title}</i> by {JSON.parse(localStorage.getItem('log')).at(-1).author})</p>
+        <p>
+          (Excerpt from <i>{latest?.title}</i> by {latest?.author})
+        </p>
       </div>
       <button
         onClick={() => {
-          const storedData = localStorage.getItem('log');
-          if (storedData) {
-            const log = JSON.parse(storedData) as LogEntry[];
-            if (log.length > 0) {
-              const lastIndex = log.length - 1;
-              log[lastIndex].curScene = -1;
-              localStorage.setItem('log', JSON.stringify(log));
-            }
+          if (latest) {
+            updateLastLogField("curScene", -1 as any);
           }
           onContinue();
         }}
@@ -121,5 +96,4 @@ export default function CompareScene({ onContinue }: CompareProps) {
     </div>
   );
 }
-
 

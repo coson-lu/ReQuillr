@@ -2,40 +2,31 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { PickResult } from "@/lib/passagePicker";
+import { useLogStore } from "@/stores/useLogStores";
 
 interface NotesProps {
   onContinue: () => void;
 }
-
-type LogEntry = {
-  passage: PickResult | null;
-  author: string;
-  title: string;
-  curScene: number;
-  scenes: string[];
-};
 
 export default function NotesScene({ onContinue }: NotesProps) {
   const [notesText, setNotesText] = useState<string>("");
   const passageRef = useRef<HTMLDivElement>(null);
   const notesRef = useRef<HTMLTextAreaElement>(null);
 
+  const logs = useLogStore((s) => s.logs);
+  const updateLastLogField = useLogStore((s) => s.updateLastLogField);
+
+  const latest = logs.at(-1);
+
   useEffect(() => {
     try {
-      const storedData = localStorage.getItem('log');
-      if (storedData) {
-        const parsed = JSON.parse(storedData) as LogEntry[];
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const last = parsed.at(-1);
-          if (last?.scenes && typeof last.scenes[1] === 'string') {
-            setNotesText(last.scenes[1]);
-          }
-        }
+      if (latest?.scenes && typeof latest.scenes[1] === "string") {
+        setNotesText(latest.scenes[1]);
       }
     } catch (error) {
-      console.error('Failed to load from localStorage:', error);
+      console.error("Failed to load from store:", error);
     }
-  }, []);
+  }, [latest]);
 
   function handleNotesChange(event: React.ChangeEvent<any>) {
     event.preventDefault();
@@ -43,17 +34,13 @@ export default function NotesScene({ onContinue }: NotesProps) {
     setNotesText(newVal);
 
     try {
-      const storedData = localStorage.getItem('log');
-      if (storedData) {
-        const log = JSON.parse(storedData) as LogEntry[];
-        if (log.length > 0) {
-          const lastIndex = log.length - 1;
-          log[lastIndex].scenes[1] = newVal;
-          localStorage.setItem('log', JSON.stringify(log));
-        }
+      if (latest) {
+        const nextScenes = [...(latest.scenes ?? [])];
+        nextScenes[1] = newVal;
+        updateLastLogField("scenes", nextScenes as any);
       }
     } catch (error) {
-      console.error('Failed to save to localStorage:', error);
+      console.error("Failed to save to store:", error);
     }
   }
 
@@ -68,7 +55,7 @@ export default function NotesScene({ onContinue }: NotesProps) {
             ref={passageRef}
             className="w-[50%] h-[100%] pl-10 pr-7 py-5 shadow-sm font-header text-[#111] whitespace-pre-line bg-white/90 border border-black/5 overflow-y-scroll [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100/0 [&::-webkit-scrollbar-thumb]:bg-accent transition transition-discrete"
           >
-            <p>{JSON.parse(localStorage.getItem('log')).at(-1).passage.passage}</p>
+            <p>{latest?.passage?.passage}</p>
           </div>
           <textarea
             ref={notesRef}
@@ -84,18 +71,12 @@ export default function NotesScene({ onContinue }: NotesProps) {
         </div>
       </div>
       <div className="animate-fade-in absolute top-[87vh] text-sm font-header left-1/2 -translate-x-1/2">
-        <p>(Excerpt from <i>{JSON.parse(localStorage.getItem('log')).at(-1).title}</i> by {JSON.parse(localStorage.getItem('log')).at(-1).author})</p>
+        <p>(Excerpt from <i>{latest?.title}</i> by {latest?.author})</p>
       </div>
       <button
         onClick={() => {
-          const storedData = localStorage.getItem('log');
-          if (storedData) {
-            const log = JSON.parse(storedData) as LogEntry[];
-            if (log.length > 0) {
-              const lastIndex = log.length - 1;
-              log[lastIndex].curScene += 1;
-              localStorage.setItem('log', JSON.stringify(log));
-            }
+          if (latest) {
+            useLogStore.getState().updateLastLogField("curScene", (latest.curScene + 1) as any);
           }
           onContinue();
         }}
@@ -106,3 +87,4 @@ export default function NotesScene({ onContinue }: NotesProps) {
     </div>
   );
 }
+

@@ -3,25 +3,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { PickResult } from "@/lib/passagePicker";
-
-type LogEntry = {
-  passage: PickResult | null;
-  author: string;
-  title: string;
-  curScene: number;
-  scenes: string[];
-};
+import { useLogStore, type LogEntry } from "@/stores/useLogStores";
 
 export default function LogViewer() {
-  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const logs = useLogStore((s) => s.logs);
 
-  useEffect(() => {
-    const logData = localStorage.getItem('log');
-    if (logData) {
-      const parsed = JSON.parse(logData);
-      setLogs(parsed);
-    }
-  }, []);
+  // console.log(logs)
 
   return (
     <div className="">

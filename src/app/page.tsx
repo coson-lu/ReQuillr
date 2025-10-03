@@ -2,27 +2,22 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-
-type LogEntry = {
-  passage: PickResult | null;
-  author: string;
-  title: string;
-  curScene: number;
-  scenes: string[];
-};
+import { useLogStore, type LogEntry } from "@/stores/useLogStores";
 
 export default function Home() {
-  const [processStage, setProcessStage] = useState<string>("")
+  const [processStage, setProcessStage] = useState<string>("");
+
+  const logs = useLogStore((s) => s.logs);
 
   useEffect(() => {
-    const storedData = JSON.parse(localStorage.getItem('log')) as LogEntry[] || [];
+    const storedData = (logs as LogEntry[]) || [];
     const last = storedData.at(-1);
     if (!last || last.curScene < 2) {
-      setProcessStage("copywork")
+      setProcessStage("copywork");
     } else {
-      setProcessStage("recreate")
+      setProcessStage("recreate");
     }
-  }, [])
+  }, [logs]);
 
   return (
     <div className="">
@@ -52,3 +47,4 @@ export default function Home() {
     </div>
   );
 }
+

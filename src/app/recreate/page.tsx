@@ -7,14 +7,7 @@ import RewriteScene from "./rewrite";
 import CompareScene from "./compare";
 import DoneScene from "./done";
 import { useRouter } from 'next/navigation';
-
-type LogEntry = {
-  passage: PickResult;
-  author: string;
-  title: string;
-  curScene: number;
-  scenes: string[];
-};
+import { useLogStore, LogEntry } from "@/stores/useLogStores";
 
 export default function Home() {
   const router = useRouter();
@@ -25,14 +18,15 @@ export default function Home() {
   const [scene, setScene] = useState<string>('');
   const [progress, setProgress] = useState<number>(0);
 
+  const logs = useLogStore((s) => s.logs);
+
   const didInitRef = useRef(false);
   useEffect(() => {
     if (didInitRef.current) return;
     didInitRef.current = true;
 
-    const storedData = JSON.parse(localStorage.getItem('log')) as LogEntry[] || [];
+    const storedData = logs as LogEntry[] || [];
     const last = storedData.at(-1);
-
 
     switch (last.curScene) {
       case 2:

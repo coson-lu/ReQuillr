@@ -2,18 +2,11 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { PickResult } from "@/lib/passagePicker";
+import { useLogStore, LogEntry } from "@/stores/useLogStores";
 
 interface CopyProps {
   onContinue: () => void;
 }
-
-type LogEntry = {
-  passage: PickResult | null;
-  author: string;
-  title: string;
-  curScene: number;
-  scenes: string[];
-};
 
 export default function CopyScene({ onContinue }: CopyProps) {
   const [copyWorkText, setCopyWorkText] = useState<string>("");
@@ -28,27 +21,27 @@ export default function CopyScene({ onContinue }: CopyProps) {
   const copyHintRef = useRef<HTMLDivElement>(null);
   const continueButtonRef = useRef<HTMLButtonElement>(null);
 
+  const logs = useLogStore((s) => s.logs);
+  const updateLastLogField = useLogStore((s) => s.updateLastLogField);
+
+  const latest = logs.at(-1);
+
   useEffect(() => {
     try {
-      const storedData = localStorage.getItem('log');
-      if (storedData) {
-        const parsed = JSON.parse(storedData) as LogEntry[];
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const last = parsed.at(-1);
-          if (last?.scenes && typeof last.scenes[0] === 'string') {
-            setCopyWorkText(last.scenes[0]);
-            setHighlightHtml(buildHighlights(last.scenes[0], last.passage?.passage ?? ""));
+      if (latest && Array.isArray(latest.scenes) && latest.scenes.length > 0) {
+        const firstScene = latest.scenes[0] ?? "";
+        const target = latest.passage?.passage ?? "";
+        setCopyWorkText(firstScene);
+        setHighlightHtml(buildHighlights(firstScene, target));
 
-            if (last.scenes[0] === last.passage?.passage) {
-              continueButtonRef.current?.classList.remove("hidden");
-            }
-          }
+        if (firstScene === target) {
+          continueButtonRef.current?.classList.remove("hidden");
         }
       }
     } catch (error) {
-      console.error('Failed to load from localStorage:', error);
+      console.error("Failed to initialize from store:", error);
     }
-  }, []);
+  }, [logs, latest]);
 
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -100,19 +93,18 @@ export default function CopyScene({ onContinue }: CopyProps) {
   function handleCopyChange(event: React.ChangeEvent<any>) {
     event.preventDefault();
     const newVal = event.target.value;
-    const storedData = localStorage.getItem('log');
-    const log = JSON.parse(storedData) as LogEntry[];
-    const latest = log.at(-1)
-    setCopyWorkText(newVal);
-    setHighlightHtml(buildHighlights(newVal, latest?.passage?.passage ?? ""));
+    const target = latest?.passage?.passage ?? "";
 
-    if (log.length > 0) {
-      const lastIndex = log.length - 1;
-      log[lastIndex].scenes[0] = newVal;
-      localStorage.setItem('log', JSON.stringify(log));
+    setCopyWorkText(newVal);
+    setHighlightHtml(buildHighlights(newVal, target));
+
+    if (latest) {
+      const nextScenes = [...(latest.scenes ?? [])];
+      nextScenes[0] = newVal;
+      updateLastLogField('scenes', nextScenes as any);
     }
 
-    if (newVal === latest?.passage?.passage) {
+    if (newVal === target) {
       continueButtonRef.current?.classList.remove("hidden");
     }
   }
@@ -138,7 +130,7 @@ export default function CopyScene({ onContinue }: CopyProps) {
               ref={passageRef}
               className="w-[100%] h-[100%] pl-10 pr-7 py-5 shadow-sm font-header whitespace-pre-line text-[#111] bg-white/90 border border-black/5 overflow-y-scroll [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100/0 [&::-webkit-scrollbar-thumb]:bg-accent transition transition-discrete"
             >
-              <p>{JSON.parse(localStorage.getItem('log')).at(-1).passage.passage}</p>
+              <p>{latest?.passage?.passage}</p>
             </div>
             <p
               ref={passageHintRef}
@@ -191,19 +183,13 @@ export default function CopyScene({ onContinue }: CopyProps) {
         </div>
       </div>
       <div className="animate-fade-in absolute top-[87vh] text-sm font-header left-1/2 -translate-x-1/2">
-        <p>(Excerpt from <i>{JSON.parse(localStorage.getItem('log')).at(-1).title}</i> by {JSON.parse(localStorage.getItem('log')).at(-1).author})</p>
+        <p>(Excerpt from <i>{latest?.title}</i> by {latest?.author})</p>
       </div>
       <button
         ref={continueButtonRef}
         onClick={() => {
-          const storedData = localStorage.getItem('log');
-          if (storedData) {
-            const log = JSON.parse(storedData) as LogEntry[];
-            if (log.length > 0) {
-              const lastIndex = log.length - 1;
-              log[lastIndex].curScene += 1;
-              localStorage.setItem('log', JSON.stringify(log));
-            }
+          if (latest) {
+            updateLastLogField('curScene', (latest.curScene + 1) as any);
           }
           onContinue();
         }}
@@ -214,3 +200,4 @@ export default function CopyScene({ onContinue }: CopyProps) {
     </div>
   );
 }
+

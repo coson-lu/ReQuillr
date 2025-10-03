@@ -7,14 +7,7 @@ import CopyScene from "./copy";
 import NotesScene from "./notes";
 import DoneScene from "./done";
 import { useRouter } from 'next/navigation';
-
-type LogEntry = {
-  passage: PickResult;
-  author: string;
-  title: string;
-  curScene: number;
-  scenes: string[];
-};
+import { useLogStore, type LogEntry } from "@/stores/useLogStores";
 
 export default function Home() {
   const router = useRouter();
@@ -25,13 +18,15 @@ export default function Home() {
   const [scene, setScene] = useState<string>('');
   const [progress, setProgress] = useState<number>(0);
 
+  const logs = useLogStore((s) => s.logs);
+  const addLog = useLogStore((s) => s.addLog);
+
   const didInitRef = useRef(false);
   useEffect(() => {
     if (didInitRef.current) return;
     didInitRef.current = true;
 
-    const storedData = JSON.parse(localStorage.getItem('log')) as LogEntry[] || [];
-    const last = storedData.at(-1);
+    const last = logs.at(-1);
 
     if (!last || last.curScene === -1) {
       const bookCount = textsJSON.length;
@@ -48,22 +43,12 @@ export default function Home() {
         scenes: ["", "", "", ""],
       };
 
-      const newLog = [...storedData, entry];
-
       setPassage(chosenPassage);
       setAuthor(book.author);
       setTitle(book.title);
-      localStorage.setItem('log', JSON.stringify(newLog));
+      addLog(entry);
       setScene('copy');
       setProgress(0.5);
-
-      try {
-        if (typeof window !== "undefined") {
-          localStorage.setItem('log', JSON.stringify(newLog));
-        }
-      } catch (err) {
-        console.error('Failed to save initial log to localStorage:', err);
-      }
     } else {
       switch (last.curScene) {
         case 0:
@@ -91,7 +76,7 @@ export default function Home() {
       if (last.author) setAuthor(last.author);
       if (last.title) setTitle(last.title);
     }
-  }, [router]);
+  }, [router, logs]);
 
   return (
     <div className="">
@@ -120,3 +105,4 @@ export default function Home() {
     </div>
   );
 }
+
