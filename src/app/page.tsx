@@ -42,7 +42,7 @@ export default function Home() {
             </Link>
           }
         </div>
-        <p className="font-light text-center absolute left-1/2 -translate-x-1/2 top-[calc(50%+4rem)] w-auto hover:underline underline-offset-2 hover:cursor-pointer">What's this?</p>
+        <p className="font-light text-center absolute left-1/2 -translate-x-1/2 top-[calc(50%+4rem)] w-auto hover:underline underline-offset-2 hover:cursor-pointer">What&apos;s this?</p>
       </div>
     </div>
   );

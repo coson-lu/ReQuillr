@@ -1,12 +1,11 @@
 "use client"
 
-import React, { useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import React from "react";
 
 export default function Settings() {
   return (
     <div className="">
-      <p>Settings!</p>
+      <p>Settings! (under construction)</p>
     </div>
   )
 

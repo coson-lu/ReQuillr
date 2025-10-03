@@ -15,12 +15,12 @@ type LogStore = {
 	logs: LogEntry[];
 	addLog: (entry: LogEntry) => void;
 	setLogs: (logs: LogEntry[]) => void;
-	updateLastLogField: (key: keyof LogEntry, value: any) => void;
+	updateLastLogField: <K extends keyof LogEntry>(key: K, value: LogEntry[K]) => void;
 };
 
 export const useLogStore = create<LogStore>()(
 	persist(
-		(set, get) => ({
+		(set) => ({
 			logs: [],
 
 			addLog: (entry) =>

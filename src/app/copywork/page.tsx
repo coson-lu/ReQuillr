@@ -12,9 +12,6 @@ import { useLogStore, type LogEntry } from "@/stores/useLogStores";
 export default function Home() {
   const router = useRouter();
 
-  const [passage, setPassage] = useState<PickResult | undefined>(undefined);
-  const [author, setAuthor] = useState<string>("");
-  const [title, setTitle] = useState<string>("");
   const [scene, setScene] = useState<string>('');
   const [progress, setProgress] = useState<number>(0);
 
@@ -43,9 +40,6 @@ export default function Home() {
         scenes: ["", "", "", ""],
       };
 
-      setPassage(chosenPassage);
-      setAuthor(book.author);
-      setTitle(book.title);
       addLog(entry);
       setScene('copy');
       setProgress(0.5);
@@ -54,16 +48,10 @@ export default function Home() {
         case 0:
           setScene("copy");
           setProgress(0.5);
-          setAuthor(last.author || "");
-          setTitle(last.title || "");
-          setPassage(last.passage);
           break;
         case 1:
           setScene("notes");
           setProgress(10);
-          setAuthor(last.author || "");
-          setTitle(last.title || "");
-          setPassage(last.passage);
           break;
         case 2:
         case 3:
@@ -71,10 +59,6 @@ export default function Home() {
           router.replace('/');
           break;
       }
-
-      if (last.passage) setPassage(last.passage);
-      if (last.author) setAuthor(last.author);
-      if (last.title) setTitle(last.title);
     }
   }, [router, logs]);
 

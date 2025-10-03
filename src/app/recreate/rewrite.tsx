@@ -27,7 +27,7 @@ export default function RewriteScene({ onContinue }: RewriteProps) {
     }
   }, [latest]);
 
-  function handleNotesChange(event: React.ChangeEvent<any>) {
+  function handleNotesChange(event: React.ChangeEvent<HTMLTextAreaElement>) {
     event.preventDefault();
     const newVal = event.target.value;
     setRewriteText(newVal);
@@ -36,7 +36,7 @@ export default function RewriteScene({ onContinue }: RewriteProps) {
       if (latest) {
         const nextScenes = [...(latest.scenes ?? [])];
         nextScenes[2] = newVal;
-        updateLastLogField("scenes", nextScenes as any);
+        updateLastLogField("scenes", nextScenes);
       }
     } catch (error) {
       console.error('Failed to save to store:', error);
@@ -75,7 +75,7 @@ export default function RewriteScene({ onContinue }: RewriteProps) {
       <button
         onClick={() => {
           if (latest) {
-            useLogStore.getState().updateLastLogField("curScene", (latest.curScene + 1) as any);
+            useLogStore.getState().updateLastLogField("curScene", (latest.curScene + 1));
           }
           onContinue();
         }}

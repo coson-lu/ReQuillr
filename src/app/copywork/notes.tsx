@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { PickResult } from "@/lib/passagePicker";
 import { useLogStore } from "@/stores/useLogStores";
 
 interface NotesProps {
@@ -28,7 +27,7 @@ export default function NotesScene({ onContinue }: NotesProps) {
     }
   }, [latest]);
 
-  function handleNotesChange(event: React.ChangeEvent<any>) {
+  function handleNotesChange(event: React.ChangeEvent<HTMLTextAreaElement>) {
     event.preventDefault();
     const newVal = event.target.value;
     setNotesText(newVal);
@@ -37,7 +36,7 @@ export default function NotesScene({ onContinue }: NotesProps) {
       if (latest) {
         const nextScenes = [...(latest.scenes ?? [])];
         nextScenes[1] = newVal;
-        updateLastLogField("scenes", nextScenes as any);
+        updateLastLogField("scenes", nextScenes);
       }
     } catch (error) {
       console.error("Failed to save to store:", error);
@@ -76,7 +75,7 @@ export default function NotesScene({ onContinue }: NotesProps) {
       <button
         onClick={() => {
           if (latest) {
-            useLogStore.getState().updateLastLogField("curScene", (latest.curScene + 1) as any);
+            useLogStore.getState().updateLastLogField("curScene", (latest.curScene + 1));
           }
           onContinue();
         }}

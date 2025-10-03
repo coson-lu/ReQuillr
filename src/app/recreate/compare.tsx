@@ -27,7 +27,7 @@ export default function CompareScene({ onContinue }: CompareProps) {
     }
   }, [latest]);
 
-  function handleNotesChange(event: React.ChangeEvent<any>) {
+  function handleNotesChange(event: React.ChangeEvent<HTMLTextAreaElement>) {
     event.preventDefault();
     const newVal = event.target.value;
     setCompareText(newVal);
@@ -36,7 +36,7 @@ export default function CompareScene({ onContinue }: CompareProps) {
       if (latest) {
         const nextScenes = [...(latest.scenes ?? [])];
         nextScenes[3] = newVal;
-        updateLastLogField("scenes", nextScenes as any);
+        updateLastLogField("scenes", nextScenes);
       }
     } catch (error) {
       console.error("Failed to save to store:", error);
@@ -85,7 +85,7 @@ export default function CompareScene({ onContinue }: CompareProps) {
       <button
         onClick={() => {
           if (latest) {
-            updateLastLogField("curScene", -1 as any);
+            updateLastLogField("curScene", -1);
           }
           onContinue();
         }}

@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { PickResult } from "@/lib/passagePicker";
-import { useLogStore, LogEntry } from "@/stores/useLogStores";
+import { useLogStore } from "@/stores/useLogStores";
 
 interface CopyProps {
   onContinue: () => void;
@@ -46,7 +45,7 @@ export default function CopyScene({ onContinue }: CopyProps) {
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    function handleTabDown(event: any) {
+    function handleTabDown(event: React.KeyboardEvent) {
       if (event.key == 'Escape') {
         if (!canType) { // copyworking
           textAreaRef.current?.focus();
@@ -72,7 +71,7 @@ export default function CopyScene({ onContinue }: CopyProps) {
   }, [canType])
 
   function escapeHtml(s: string) {
-    return s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' } as any)[c]);
+    return s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' } as Record<string, string>)[c]);
   }
 
   function buildHighlights(typed: string, target: string) {
@@ -90,7 +89,7 @@ export default function CopyScene({ onContinue }: CopyProps) {
     return out;
   }
 
-  function handleCopyChange(event: React.ChangeEvent<any>) {
+  function handleCopyChange(event: React.ChangeEvent<HTMLTextAreaElement>) {
     event.preventDefault();
     const newVal = event.target.value;
     const target = latest?.passage?.passage ?? "";
@@ -101,7 +100,7 @@ export default function CopyScene({ onContinue }: CopyProps) {
     if (latest) {
       const nextScenes = [...(latest.scenes ?? [])];
       nextScenes[0] = newVal;
-      updateLastLogField('scenes', nextScenes as any);
+      updateLastLogField('scenes', nextScenes);
     }
 
     if (newVal === target) {
@@ -109,7 +108,7 @@ export default function CopyScene({ onContinue }: CopyProps) {
     }
   }
 
-  function handleKeyPressed(event: any) {
+  function handleKeyPressed(event: React.KeyboardEvent) {
     if (event.key.length > 1) {
       return;
     }
@@ -189,7 +188,7 @@ export default function CopyScene({ onContinue }: CopyProps) {
         ref={continueButtonRef}
         onClick={() => {
           if (latest) {
-            updateLastLogField('curScene', (latest.curScene + 1) as any);
+            updateLastLogField('curScene', (latest.curScene + 1));
           }
           onContinue();
         }}

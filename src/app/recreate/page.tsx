@@ -1,8 +1,6 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { pickPassage, PickResult } from '@/lib/passagePicker';
-import textsJSON from '../../../public/texts.json';
 import RewriteScene from "./rewrite";
 import CompareScene from "./compare";
 import DoneScene from "./done";
@@ -12,9 +10,6 @@ import { useLogStore, LogEntry } from "@/stores/useLogStores";
 export default function Home() {
   const router = useRouter();
 
-  const [passage, setPassage] = useState<PickResult | undefined>(undefined);
-  const [author, setAuthor] = useState<string>("");
-  const [title, setTitle] = useState<string>("");
   const [scene, setScene] = useState<string>('');
   const [progress, setProgress] = useState<number>(0);
 
@@ -32,16 +27,10 @@ export default function Home() {
       case 2:
         setScene("rewrite");
         setProgress(0.5);
-        setAuthor(last.author || "");
-        setTitle(last.title || "");
-        setPassage(last.passage);
         break;
       case 3:
         setScene("compare");
         setProgress(10);
-        setAuthor(last.author || "");
-        setTitle(last.title || "");
-        setPassage(last.passage);
         break;
       case 0:
       case 1:
@@ -49,11 +38,7 @@ export default function Home() {
         router.replace('/');
         break;
     }
-
-    if (last.passage) setPassage(last.passage);
-    if (last.author) setAuthor(last.author);
-    if (last.title) setTitle(last.title);
-  }, [router]);
+  }, [logs, router]);
 
   return (
     <div className="">

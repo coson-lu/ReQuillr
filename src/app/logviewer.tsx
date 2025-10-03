@@ -1,9 +1,7 @@
 "use client"
 
-import React, { useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { PickResult } from "@/lib/passagePicker";
-import { useLogStore, type LogEntry } from "@/stores/useLogStores";
+import React from "react";
+import { useLogStore } from "@/stores/useLogStores";
 
 export default function LogViewer() {
   const logs = useLogStore((s) => s.logs);
