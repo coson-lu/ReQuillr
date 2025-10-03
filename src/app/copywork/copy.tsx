@@ -45,7 +45,7 @@ export default function CopyScene({ onContinue }: CopyProps) {
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    function handleTabDown(event: React.KeyboardEvent) {
+    function handleTabDown(event: KeyboardEvent) {
       if (event.key == 'Escape') {
         if (!canType) { // copyworking
           textAreaRef.current?.focus();
