@@ -23,9 +23,9 @@ export function pickPassage(
 	opts: PickPassageOptions = {}
 ): PickResult | null {
 	const {
-		targetWords = 200,
-		minWords = 100,
-		maxWords = 275,
+		targetWords = 150,
+		minWords = 75,
+		maxWords = 225,
 		locale = "en-US",
 		mergeParagraphBelow = 15,
 		attempts = 6,

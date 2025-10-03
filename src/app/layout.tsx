@@ -43,7 +43,7 @@ export default function RootLayout({
         {children}
 
         <footer>
-          <p className="absolute left-5 bottom-3 z-20">created by Coson Lu</p>
+          <p className="absolute left-5 bottom-3 z-20 font-light">created by Coson Lu</p>
         </footer>
       </body>
     </html>
