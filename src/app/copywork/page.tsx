@@ -20,11 +20,9 @@ export default function Home() {
 
   const didInitRef = useRef(false);
   useEffect(() => {
-    if (!didInitRef.current && logs.length === 0) {
-      // skip the initial empty state
-      didInitRef.current = true;
-      return;
-    }
+    if (useLogStore.getState().logs != logs) return;
+    if (didInitRef.current) return;
+    didInitRef.current = true;
 
     const last = logs.at(-1);
 
