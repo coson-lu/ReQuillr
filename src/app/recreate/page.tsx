@@ -23,7 +23,7 @@ export default function Home() {
     const storedData = logs as LogEntry[] || [];
     const last = storedData.at(-1);
 
-    switch (last.curScene) {
+    switch (last?.curScene) {
       case 2:
         setScene("rewrite");
         setProgress(0.5);
