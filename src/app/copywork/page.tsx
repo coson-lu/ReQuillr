@@ -29,8 +29,8 @@ export default function Home() {
     if (!last || last.curScene === -1) {
       const bookCount = textsJSON.length;
       // let randomBookIndex = Math.floor(Math.random() * bookCount);
-      let randomBookIndex = 1;
-      let book = textsJSON[randomBookIndex];
+      const randomBookIndex = 1;
+      const book = textsJSON[randomBookIndex];
       console.log(book["title"])
       // while (book["title"] != "The Problems of Philosophy") {
       //   let randomBookIndex = Math.floor(Math.random() * bookCount);
