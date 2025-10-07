@@ -28,8 +28,14 @@ export default function Home() {
 
     if (!last || last.curScene === -1) {
       const bookCount = textsJSON.length;
-      const randomBookIndex = Math.floor(Math.random() * bookCount);
-      const book = textsJSON[randomBookIndex];
+      // let randomBookIndex = Math.floor(Math.random() * bookCount);
+      let randomBookIndex = 1;
+      let book = textsJSON[randomBookIndex];
+      console.log(book["title"])
+      // while (book["title"] != "The Problems of Philosophy") {
+      //   let randomBookIndex = Math.floor(Math.random() * bookCount);
+      //   let book = textsJSON[randomBookIndex];
+      // }
 
       const chosenPassage = pickPassage(book["text"], {});
 
